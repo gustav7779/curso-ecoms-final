@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}Panel Alumno - Curso ECOMS{% endblock %}
+
+{% block content %}
+    <!-- ⚠️ NOTA: Este es el código del DASHBOARD PRINCIPAL, adaptado para usar 'username' -->
+    <div class="header-reports-title">
+        <h1>Bienvenido, {{ username }} 🎓</h1>
+        <p>Este es tu panel de alumno, tu centro de acceso rápido y herramientas.</p>
+    </div>
+
+    <div class="container reports-list-container">
+        
+        <!-- Tarjeta de bienvenida simplificada -->
+        <div class="card" style="padding: 30px; text-align: center;">
+            <h2>Acceso Rápido</h2>
+            <p>Desde aquí puedes iniciar tus exámenes y revisar tus calificaciones.</p>
+            <div style="margin-top: 20px;">
+                <!-- Usando clases de botón consistentes -->
+                <a href="{{ url_for('exams_list') }}" class="button" style="background: #3498db; margin-right: 15px;">
+                    📝 Ir a Exámenes
+                </a>
+                <a href="{{ url_for('student_exams') }}" class="button" style="background: #2ecc71;">
+                    📊 Ver Calificaciones
+                </a>
+            </div>
+        </div>
+
+        <!-- Botón de Cerrar Sesión (al fondo) -->
+        <div style="text-align: center; margin-top: 30px;">
+             <a class="btn back-nav-btn" href="{{ url_for('logout') }}">Cerrar sesión</a>
+        </div>
+        
+    </div>
+
+    <style>
+        /* --- Título de la Página (Header Falso) --- */
+        .header-reports-title {
+            background: linear-gradient(90deg, #3498db, #2980b9); /* Fondo consistente con dashboard */
+            color: white; 
+            padding: 25px;
+            text-align: center; 
+            border-radius: 0 0 10px 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .header-reports-title h1, .header-reports-title p {
+            margin: 0;
+        }
+
+        .reports-list-container {
+            max-width: 1000px;
+            margin-top: 30px;
+        }
+
+        /* --- Tarjeta Genérica --- */
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        /* --- Botón Genérico y de Navegación --- */
+        .button {
+            display: inline-block;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            text-decoration: none;
+            color: white;
+            transition: background 0.3s;
+        }
+        .button:hover {
+            opacity: 0.9;
+        }
+        
+        .back-nav-btn {
+            background: #7f8c8d; 
+            padding: 10px 15px;
+            margin: 0;
+        }
+        .back-nav-btn:hover {
+            background: #5c6a74;
+            transform: none;
+        }
+
+        /* --- MEDIA QUERY (Móvil) --- */
+        @media (max-width: 600px) {
+            .reports-list-container {
+                width: 100%;
+                padding: 0 10px;
+            }
+            .header-reports-title {
+                padding: 15px;
+            }
+            .header-reports-title h1 {
+                font-size: 1.5em;
+            }
+            
+            .button {
+                display: block;
+                width: 100%;
+                margin-top: 15px !important;
+            }
+        }
+    </style>
+{% endblock %}

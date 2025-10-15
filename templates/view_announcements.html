@@ -1,0 +1,311 @@
+{% extends "base.html" %}
+
+{% block title %}Avisos y Anuncios{% endblock %}
+
+{% block content %}
+    <div class="header-announcement-title">
+        <h1>📢 Avisos y Anuncios del Curso</h1>
+    </div>
+    
+    {% if not has_subscribed %}
+    <div id="subscription-overlay" class="sub-overlay">
+        <div class="overlay-content">
+            <h1 class="sub-title">🔔 ¡No te pierdas ningún aviso!</h1>
+            <p class="sub-text">Introduce tu correo electrónico para recibir **notificaciones inmediatas** cada vez que se publique un anuncio importante.</p>
+            
+            <form id="subscription-form" class="subscription-form" action="#"> 
+                <input type="email" id="email" name="email" placeholder="ejemplo@correo.com" required>
+                <button type="submit" class="button confirm-btn">
+                    Confirmar Correo Electrónico
+                </button>
+            </form>
+            <p class="sub-skip" id="skip-button">Omitir por ahora y ver anuncios</p>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="container announcement-list-container">
+        
+        <a href="{{ url_for('dashboard') }}" class="btn back-nav-btn">⬅ Volver al Panel</a>
+        
+        {% for ann_status in announcements %}
+            {% set announcement = ann_status.announcement %}
+            
+            <div class="announcement-card {% if ann_status.is_new %}announcement-new{% endif %}">
+                <div class="announcement-header">
+                    
+                    <h2 class="announcement-title-text">{{ announcement.title }}</h2>
+                    
+                    {% if ann_status.is_new %}
+                        <span class="new-tag" data-announcement-id="{{ announcement.id }}">¡NUEVO!</span>
+                    {% endif %}
+                    
+                </div>
+                
+                <p class="announcement-content">{{ announcement.content | safe }}</p>
+                <hr class="separator">
+                
+                <p class="announcement-meta">
+                    Publicado por: <strong>{{ announcement.publisher.username }}</strong>
+                    el {{ announcement.date_published | datetimeformat('dd/MM/yyyy HH:mm') }}
+                </p>
+            </div>
+        {% else %}
+            <p class="no-items-message">Aún no hay anuncios ni avisos publicados por la administración.</p>
+        {% endfor %}
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 🔑 URL TEMPLATE: Usamos un marcador de posición '0' para que Jinja genere la URL base
+            const urlTemplate = "{{ url_for('mark_announcement_read', announcement_id=0) }}";
+            
+            let newTags = document.querySelectorAll('.new-tag');
+            let idsToMark = [];
+
+            // 1. Identificar y marcar los anuncios como leídos via AJAX
+            newTags.forEach(function(tag) {
+                const annId = tag.getAttribute('data-announcement-id');
+                idsToMark.push(annId);
+                
+                // Ocultar la etiqueta "¡NUEVO!" y quitar el color rojo de la tarjeta
+                const card = tag.closest('.announcement-card');
+                if (card) {
+                    card.classList.remove('announcement-new');
+                    card.style.borderLeftColor = '#3498db'; 
+                }
+                tag.style.display = 'none'; 
+            });
+            
+            if (idsToMark.length > 0) {
+                idsToMark.forEach(function(announcementId) {
+                    const finalUrl = urlTemplate.replace('0', announcementId);
+                    
+                    // Enviamos la petición asíncrona
+                    fetch(finalUrl, { method: 'GET' })
+                        .catch(error => console.error('Error marcando como leído:', error));
+                });
+            }
+
+            // --- LÓGICA DE OVERLAY DE SUSCRIPCIÓN ---
+            const subOverlay = document.getElementById('subscription-overlay');
+            const skipButton = document.getElementById('skip-button'); 
+            const subForm = document.getElementById('subscription-form');
+
+            // 🔑 CORRECCIÓN: Lógica de formulario deshabilitada para evitar errores de backend 🔑
+            if (subForm) {
+                subForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    // Simulación de envío
+                    alert('La función de suscripción no está activa en esta versión. Ocultando el aviso.');
+                    
+                    if (subOverlay) {
+                        subOverlay.style.opacity = 0;
+                        setTimeout(() => {
+                            subOverlay.style.display = 'none';
+                        }, 300);
+                    }
+                });
+            }
+
+
+            // 🔑 CORRECCIÓN: Manejador del botón "Omitir por ahora" 🔑
+            if (skipButton && subOverlay) {
+                skipButton.addEventListener('click', function() {
+                    // Ocultamos el overlay al presionar Omitir
+                    subOverlay.style.opacity = 0;
+                    setTimeout(() => {
+                        subOverlay.style.display = 'none';
+                    }, 300);
+                });
+            }
+        });
+    </script>
+    <style>
+        /* --- ESTILOS DEL OVERLAY DE SUSCRIPCIÓN (NUEVOS) --- */
+        .sub-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7); /* Fondo oscuro suave */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            opacity: 1;
+            transition: opacity 0.3s ease-out;
+        }
+        .overlay-content {
+            background: #ffffff;
+            color: #333;
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+            max-width: 450px;
+            border-top: 8px solid #3498db;
+        }
+        .sub-title {
+            color: #3498db; 
+            font-size: 1.8em;
+            margin-bottom: 10px;
+        }
+        .sub-text {
+            font-size: 1.1em;
+            margin-bottom: 25px;
+            color: #555;
+        }
+        .subscription-form input[type="email"] {
+            width: 95%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+            font-size: 1em;
+        }
+        .confirm-btn {
+            background: #2ecc71 !important;
+            width: 100%;
+            padding: 12px 0;
+            font-size: 1.1em;
+            font-weight: bold;
+            border-radius: 8px;
+        }
+        .confirm-btn:hover {
+            background: #27ae60 !important;
+        }
+        .sub-skip {
+            cursor: pointer;
+            color: #7f8c8d;
+            margin-top: 15px;
+            text-decoration: underline;
+            font-size: 0.9em;
+        }
+        .sub-skip:hover {
+            color: #333;
+        }
+        
+        /* --- ESTILOS ANTERIORES (CONSERVADOS) --- */
+        .header-announcement-title {
+            background: #2c3e50; 
+            color: white; 
+            padding: 25px;
+            text-align: center; 
+            border-radius: 0 0 10px 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .header-announcement-title h1 {
+            margin: 0;
+        }
+
+        .announcement-list-container {
+            max-width: 900px;
+        }
+        
+        .back-nav-btn {
+            background: #7f8c8d;
+            padding: 10px 15px;
+            margin-bottom: 20px;
+            transition: background 0.3s, transform 0.2s;
+            display: inline-block;
+        }
+        .back-nav-btn:hover {
+            background: #5c6a74;
+            transform: translateX(-3px);
+        }
+        
+        /* --- Tarjeta de Anuncio --- */
+        .announcement-card {
+            background: white;
+            padding: 20px;
+            margin-bottom: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border-left: 5px solid #3498db; 
+            transition: border-left-color 0.5s;
+        }
+        
+        .announcement-header {
+            display: flex;
+            justify-content: space-between; 
+            align-items: center;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+        }
+        
+        .announcement-title-text {
+            color: #2c3e50; 
+            margin: 0;
+            font-size: 1.4em;
+        }
+        
+        .new-tag {
+            background: #e74c3c; 
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+        
+        .announcement-new { 
+            background: #fffafa; 
+            border-left-color: #e74c3c !important; 
+        }
+        
+        .announcement-content {
+            margin-top: 15px;
+            line-height: 1.6;
+            white-space: pre-wrap; 
+        }
+        
+        .separator {
+            border: 0;
+            border-top: 1px solid #eee;
+            margin: 15px 0 10px 0;
+        }
+        
+        .announcement-meta {
+            font-size: 0.9em; 
+            color: #7f8c8d; 
+            margin-bottom: 0;
+        }
+
+        .no-items-message {
+            padding: 15px;
+            background: #fdf3c7;
+            border-left: 5px solid #f1c40f;
+            border-radius: 5px;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+
+        /* --- MEDIA QUERY (Ajustes para Móvil) --- */
+        @media (max-width: 600px) {
+            .announcement-list-container {
+                width: 100%;
+                padding: 0 10px;
+            }
+            .announcement-card {
+                padding: 15px;
+            }
+            .announcement-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .announcement-title-text {
+                margin-bottom: 5px;
+            }
+            .back-nav-btn {
+                 width: 100%;
+            }
+        }
+    </style>
+{% endblock %}

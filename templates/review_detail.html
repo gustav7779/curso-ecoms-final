@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block title %}Revisión de Examen de {{ student.username }}{% endblock %}
+
+{% block content %}
+    <header style="background: #2c3e50; color: white; padding: 15px; text-align: center;">
+        <h1>Revisión de Examen</h1>
+        <p>Alumno: <strong>{{ student.username }}</strong> | Examen: {{ exam.title }}</p>
+    </header>
+
+    <div class="container" style="max-width: 900px; margin-top: 20px;">
+        <a href="{{ url_for('view_answers', exam_id=exam.id) }}" class="btn back-btn">
+            ⬅ Volver a la Lista de Alumnos
+        </a>
+        
+        {% for question, answer in review_data %}
+            <div class="question-review-card">
+                
+                <h3 class="question-subject">Materia: {{ question.subject or 'General' }}</h3>
+                <p><strong>{{ loop.index }}. Pregunta:</strong> {{ question.text }}</p>
+                
+                {% if question.image_filename %}
+                    <img src="{{ url_for('static', filename='images/' + question.image_filename) }}" 
+                         alt="Imagen de apoyo" class="question-image">
+                {% endif %}
+
+                <div class="feedback-box {% if answer.grade == 1.0 %}correct{% else %}incorrect{% endif %}">
+                    
+                    <p class="result-indicator">
+                        {% if answer.grade == 1.0 %}
+                            ✅ **Acierto!** (1.0 punto)
+                        {% elif answer.grade == 0.0 %}
+                            ❌ **Incorrecto** (0 puntos)
+                        {% else %}
+                            ⚠️ **Respuesta Abierta** (Revisión manual previa)
+                        {% endif %}
+                    </p>
+                    
+                    <hr>
+                    
+                    <p><strong>Tu Respuesta:</strong> 
+                        <span class="student-answer">
+                            {% if question.correct_option %}
+                                Opción **{{ answer.response }}**
+                            {% else %}
+                                {{ answer.response }}
+                            {% endif %}
+                        </span>
+                    </p>
+                    
+                    {% if question.correct_option %}
+                        <p><strong>Clave Correcta:</strong> 
+                            Opción **{{ question.correct_option }}** ({{ question['option_' + question.correct_option.lower()] }})
+                        </p>
+                    {% endif %}
+                    
+                    {% if answer.feedback %}
+                        <p class="answer-feedback"><strong>Feedback:</strong> {{ answer.feedback }}</p>
+                    {% endif %}
+
+                </div>
+                
+            </div>
+        {% endfor %}
+    </div>
+
+    <style>
+        .question-review-card {
+            background: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .question-subject {
+            color: #3498db;
+            font-size: 1.1em;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 5px;
+        }
+        .question-image {
+            max-width: 300px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .feedback-box {
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border-left: 5px solid;
+        }
+        .correct {
+            background-color: #e6ffe6; /* Verde claro */
+            border-color: #2ecc71;
+        }
+        .incorrect {
+            background-color: #ffe6e6; /* Rojo claro */
+            border-color: #e74c3c;
+        }
+        .result-indicator {
+            font-size: 1.2em;
+            margin-top: 0;
+        }
+        .student-answer {
+            color: #2c3e50;
+        }
+        .answer-feedback {
+            font-style: italic;
+            color: #555;
+            margin-top: 10px;
+        }
+        .back-btn { margin-bottom: 20px; background: #7f8c8d; }
+    </style>
+{% endblock %}

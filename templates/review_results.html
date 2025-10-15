@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}Resultados de {{ exam.title }}{% endblock %}
+
+{% block content %}
+    <header style="background: #2c3e50; color: white; padding: 15px; text-align: center;">
+        <h1>📊 Resultados del Examen: {{ exam.title }}</h1>
+        <p>Revisa el desempeño de los alumnos y el detalle de sus respuestas.</p>
+    </header>
+
+    <div class="container" style="max-width: 900px; margin-top: 20px;">
+        <a href="{{ url_for('admin_panel') }}" class="btn" style="margin-bottom: 20px;">⬅ Volver al Panel Admin</a>
+
+        {% if results %}
+            <table class="results-table" border="1" cellpadding="10" cellspacing="0">
+                <thead>
+                    <tr>
+                        <th>Alumno</th>
+                        <th>Fecha</th>
+                        <th>Calificación Final</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for username, score, date_taken, user_id in results %}
+                    <tr>
+                        <td><strong>{{ username }}</strong></td>
+                        <td>{{ date_taken | datetimeformat('dd/MM/yyyy HH:mm') }}</td>
+                        <td>
+                            <span style="font-weight: bold; color: {% if score >= (exam.questions | length / 2) %}green{% else %}red{% endif %};">
+                                {{ "%.2f"|format(score) }} / {{ exam.questions | length }}
+                            </span>
+                        </td>
+                        <td>
+                            <a href="{{ url_for('review_student_exam', exam_id=exam.id, user_id=user_id) }}" class="button review-btn">
+                                Ver Respuestas
+                            </a>
+                            
+                            {% if current_user.role == 'admin' %}
+                            <form method="POST" action="{{ url_for('reset_exam_attempt', exam_id=exam.id, user_id=user_id) }}" 
+                                    style="display: inline; margin-left: 10px;"
+                                    onsubmit="return confirm('¿Estás seguro de que quieres REINICIAR el intento de examen de {{ username }}? Esta acción es irreversible y elimina sus respuestas.');">
+                                
+                                <input type="submit" value="Reiniciar Intento" class="button reset-btn">
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>Aún ningún alumno ha presentado este examen.</p>
+        {% endif %}
+    </div>
+
+    <style>
+        /* Estilos de la tabla existentes */
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .results-table th {
+            background-color: #3498db;
+            color: white;
+            text-align: center;
+        }
+        .results-table th, .results-table td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+        .results-table tr:nth-child(even) { background-color: #f9f9f9; } 
+        
+        .review-btn { 
+            background: #2ecc71; 
+            padding: 6px 10px; 
+            margin: 0;
+            text-decoration: none;
+            color: white;
+            border-radius: 5px;
+        }
+        .review-btn:hover { background: #27ae60; }
+
+        /* NUEVOS ESTILOS PARA EL BOTÓN DE REINICIO */
+        .reset-btn { 
+            background: #e74c3c; /* Rojo para la acción peligrosa */
+            border: none;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 5px;
+            color: white;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            font-weight: bold;
+            display: inline-block;
+            line-height: 1;
+        }
+        .reset-btn:hover { background: #c0392b; }
+        
+        /* Estilo general para botones */
+        .button {
+            text-decoration: none;
+            color: white;
+            border-radius: 5px;
+        }
+    </style>
+{% endblock %}

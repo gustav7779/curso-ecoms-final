@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}Configurar 2FA{% endblock %}
+
+{% block content %}
+    <div class="container setup-container">
+        <h1>🔐 Configuración de Autenticación de Dos Factores (2FA)</h1>
+        <p class="description-text">
+            Sigue estos pasos para proteger tu cuenta de Administrador. Necesitarás una aplicación de autenticación (como Google Authenticator o Authy).
+        </p>
+
+        <div class="setup-steps">
+            <div class="step">
+                <h2>Paso 1: Escanea el Código QR</h2>
+                {% if qr_base64 %}
+                <div class="qr-code-box">
+                    <!-- 🔑 CORRECCIÓN CLAVE: Se asegura el prefijo data:image/png;base64, 🔑 -->
+                    <img src="data:image/png;base64,{{ qr_base64 }}" alt="Código QR de 2FA">
+                </div>
+                {% endif %}
+                <p>O ingresa la clave manualmente:</p>
+                <code class="secret-key">{{ secret }}</code>
+                <p class="warning-text">Asegúrate de guardar la clave en tu aplicación antes de continuar.</p>
+            </div>
+
+            <div class="step">
+                <h2>Paso 2: Verifica el Código</h2>
+                <form method="POST">
+                    <label for="totp_code">Código de 6 dígitos de tu aplicación:</label>
+                    <input type="text" id="totp_code" name="totp_code" maxlength="6" required placeholder="Ej: 123456">
+                    <button type="submit" class="button submit-btn">
+                        Activar y Confirmar 2FA
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <a href="{{ url_for('admin_panel') }}" class="btn back-link">Volver al Panel</a>
+    </div>
+
+    <style>
+        .setup-container {
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 30px;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        h1 {
+            color: #000000;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .description-text {
+            color: #555;
+            margin-bottom: 30px;
+        }
+        .setup-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+        .step h2 {
+            color: #000000;
+            font-size: 1.4em;
+        }
+        .qr-code-box {
+            padding: 15px;
+            border: 1px solid #ccc;
+            display: inline-block;
+            margin: 10px auto;
+            border-radius: 5px;
+            background: #f8f8f8;
+        }
+        .secret-key {
+            display: block;
+            background: #ecf0f1;
+            padding: 8px 15px;
+            border-radius: 4px;
+            font-size: 1.1em;
+            margin: 10px auto 20px;
+            font-weight: bold;
+        }
+        .warning-text {
+            color: #e74c3c;
+            font-weight: 500;
+        }
+        form input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            text-align: center;
+            font-size: 1.2em;
+        }
+        .submit-btn {
+            background: #2ecc71 !important;
+            width: 100%;
+            padding: 12px;
+            margin-top: 10px;
+        }
+        .submit-btn:hover {
+            background: #27ae60 !important;
+        }
+        .back-link {
+            display: block;
+            margin-top: 30px;
+            color: #3498db;
+            text-decoration: none;
+        }
+        
+        @media (max-width: 600px) {
+            .setup-container {
+                width: 95%;
+                padding: 20px;
+            }
+        }
+    </style>
+{% endblock %}

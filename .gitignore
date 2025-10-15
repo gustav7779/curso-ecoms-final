@@ -1,0 +1,10 @@
+# Ignorar entorno virtual
+venv/
+*.pyc
+
+# Archivos sensibles (Base de datos y logs)
+*.db
+app.log
+
+# Archivos de sesión de Flask
+__pycache__/

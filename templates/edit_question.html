@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Pregunta: Q{{ question.id }}{% endblock %}
+
+{% block content %}
+    <div class="container edit-question-container">
+        <div class="card form-card">
+            <h2 class="card-title">✏️ Editando Pregunta Q{{ question.id }}</h2>
+            <p class="exam-meta">Modifica el texto, opciones o la respuesta correcta.</p>
+
+            <form method="POST" class="question-form" action="{{ url_for('edit_question', question_id=question.id) }}">
+                
+                <div class="form-group">
+                    <label for="subject">Materia/Categoría:</label>
+                    <input type="text" id="subject" name="subject" value="{{ question.subject or '' }}" placeholder="Ej: Habilidad Matemática">
+                </div>
+
+                <div class="form-group">
+                    <label for="text">Texto de la Pregunta:</label>
+                    <textarea id="text" name="text" rows="4" required>{{ question.text }}</textarea>
+                </div>
+
+                {% if question.image_filename %}
+                    <p class="image-note">Imagen actual: <strong>{{ question.image_filename }}</strong>. Para cambiarla o eliminarla, se requiere una subida de archivo más compleja.</p>
+                {% endif %}
+
+                <h3 class="options-header">Opciones de Respuesta:</h3>
+                
+                <div class="form-group">
+                    <label for="option_a">A)</label>
+                    <input type="text" id="option_a" name="option_a" value="{{ question.option_a or '' }}" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="option_b">B)</label>
+                    <input type="text" id="option_b" name="option_b" value="{{ question.option_b or '' }}" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="option_c">C)</label>
+                    <input type="text" id="option_c" name="option_c" value="{{ question.option_c or '' }}" placeholder="Opción C">
+                </div>
+
+                <div class="form-group">
+                    <label for="option_d">D)</label>
+                    <input type="text" id="option_d" name="option_d" value="{{ question.option_d or '' }}" placeholder="Opción D">
+                </div>
+
+                <div class="form-group">
+                    <label for="correct_option">Respuesta Correcta:</label>
+                    <select id="correct_option" name="correct_option" required>
+                        <option value="">-- Seleccionar --</option>
+                        {% for letter in ['A', 'B', 'C', 'D'] %}
+                            <option value="{{ letter }}" {% if question.correct_option == letter %}selected{% endif %}>{{ letter }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <button type="submit" class="button submit-btn-custom">Guardar Cambios</button>
+            </form>
+        </div>
+
+        <a href="{{ url_for('add_question', exam_id=exam_id) }}" class="btn back-btn">⬅ Volver a la Lista de Preguntas</a>
+    </div>
+    
+    <style>
+        /* --- ESTILOS DE LA VISTA DE EDICIÓN (ADAPTADOS DE add_question.html) --- */
+
+        .edit-question-container {
+            max-width: 700px;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            margin: 20px auto;
+        }
+
+        .card-title {
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            color: #34495e;
+        }
+
+        .form-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .form-group label {
+            width: 180px; 
+            text-align: right;
+            padding-right: 15px;
+            font-weight: bold;
+            color: #555;
+            flex-shrink: 0; 
+        }
+        
+        .form-group input, 
+        .form-group textarea, 
+        .form-group select {
+            flex-grow: 1; 
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+            margin: 0; 
+        }
+        
+        .form-group input:focus, 
+        .form-group textarea:focus, 
+        .form-group select:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+
+        .submit-btn-custom {
+            padding: 12px 20px;
+            margin-top: 25px;
+            background: #3498db; 
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1.1em;
+            transition: background 0.3s;
+            align-self: flex-end; 
+        }
+        .submit-btn-custom:hover {
+            background: #2980b9;
+        }
+
+        .options-header {
+            font-size: 1.2em;
+            color: #2ecc71;
+            margin-top: 30px;
+            border-top: 1px dashed #eee;
+            padding-top: 20px;
+        }
+
+        /* --- MEDIA QUERY PARA MÓVILES (Adaptación) --- */
+        @media (max-width: 768px) {
+            .edit-question-container {
+                padding: 15px;
+                margin: 10px auto;
+            }
+
+            .form-group {
+                flex-direction: column;
+                align-items: flex-start;
+                margin-bottom: 15px;
+            }
+
+            .form-group label {
+                width: 100%;
+                text-align: left;
+                padding: 0;
+                margin-bottom: 5px;
+            }
+            
+            .form-group input, 
+            .form-group textarea, 
+            .form-group select {
+                width: 100%;
+            }
+            
+            .submit-btn-custom {
+                width: 100%;
+                align-self: center;
+            }
+        }
+    </style>
+{% endblock %}

@@ -1,0 +1,303 @@
+{% extends "base.html" %}
+
+{% block title %}Mis Reportes de Problemas{% endblock %}
+
+{% block content %}
+    <div class="header-reports-title">
+        <h1>🛠️ Mis Reportes Enviados</h1>
+        <p>Consulta el estado y la respuesta de los reportes que has enviado.</p>
+    </div>
+
+    <div class="container reports-list-container">
+        <div class="top-controls">
+            <a href="{{ url_for('dashboard') }}" class="btn back-nav-btn">⬅ Volver al Dashboard</a>
+            
+            <a href="{{ url_for('new_report') }}" class="button new-report-btn major-action-btn">
+                 Enviar Nuevo Reporte
+            </a>
+        </div>
+
+        {% if reports %}
+            {% for report in reports %}
+            <div class="report-card">
+                <div class="report-header">
+                    <h2>Reporte #{{ report.id }}: {{ report.title }}</h2>
+                    <div class="status-badge 
+                        {% if report.status == 'Cerrado' %}status-closed{% elif report.status == 'En Proceso' %}status-pending{% else %}status-open{% endif %}">
+                        {{ report.status }}
+                    </div>
+                </div>
+                
+                <p class="report-meta"><strong>Enviado el:</strong> {{ report.date_submitted | datetimeformat('dd/MM/yyyy HH:mm') }}</p>
+                
+                <div class="problem-description">
+                    <p><strong>Problema reportado:</strong></p>
+                    <p class="description-text">{{ report.description }}</p>
+                </div>
+
+                {% if report.admin_response %}
+                    <hr class="thread-separator">
+                    <div class="admin-response-box">
+                        <h4 class="response-title">
+                            {% if report.status == 'Cerrado' %}
+                                ✅ Respuesta Final (Cerrado)
+                            {% else %}
+                                💬 Historial de Comunicación
+                            {% endif %}
+                        </h4>
+                        <div class="response-thread">
+                            {{ report.admin_response | replace('\n', '<br>') | safe }}
+                        </div>
+                    </div>
+                {% else %}
+                    <p class="pending-message">Esperando respuesta del administrador...</p>
+                {% endif %}
+                
+                <div class="report-actions">
+                    {% if report.image_filename %}
+                        <a href="{{ url_for('static', filename='images/' + report.image_filename) }}" target="_blank" class="button image-link">🖼️ Ver imagen de evidencia</a>
+                    {% endif %}
+                    
+                    {% if report.status != 'Cerrado' %}
+                        <form method="POST" action="{{ url_for('reply_to_report', report_id=report.id) }}" class="reply-form">
+                            <hr class="thread-separator">
+                            <div class="form-group">
+                                <label for="student_response_{{ report.id }}">Responder al Administrador:</label>
+                                <textarea id="student_response_{{ report.id }}" name="student_response" rows="2" required placeholder="Escribe tu mensaje..."></textarea>
+                            </div>
+                            <button type="submit" class="button reply-btn">✉️ Responder</button>
+                        </form>
+                    {% else %}
+                        <p class="closed-final-message">✅ Reporte Cerrado.</p>
+                    {% endif %}
+                </div>
+            </div> 
+            {% endfor %}
+        {% else %}
+            <p class="no-items-message">Aún no has enviado ningún reporte. Si tienes algún problema, ¡envíanos uno!</p>
+        {% endif %}
+    </div>
+
+    <style>
+        /* --- Título de la Página (Header Falso) --- */
+        .header-reports-title {
+            background: #3498db; 
+            color: white; 
+            padding: 25px;
+            text-align: center; 
+            border-radius: 0 0 10px 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .header-reports-title h1, .header-reports-title p {
+            margin: 0;
+        }
+
+        .reports-list-container {
+            max-width: 1000px;
+        }
+
+        /* --- Controles Superiores --- */
+        .top-controls {
+            display: flex;
+            justify-content: flex-start;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .back-nav-btn {
+            background: #7f8c8d; 
+            padding: 10px 15px;
+            margin: 0;
+            text-decoration: none; /* Asegurado */
+            border-radius: 5px; /* Asegurado */
+            color: white; /* Asegurado */
+        }
+        .back-nav-btn:hover {
+            background: #5c6a74;
+            transform: translateX(-3px);
+        }
+        
+        /* 🔑 NUEVO ESTILO: Botón principal grande de reporte 🔑 */
+        .major-action-btn {
+            background: #e74c3c !important; /* Rojo vivo */
+            padding: 12px 25px;
+            margin: 0;
+            font-weight: bold;
+            border-radius: 8px;
+            transition: background 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 8px rgba(231, 76, 60, 0.4);
+            text-decoration: none; /* Asegurado */
+            color: white; /* Asegurado */
+        }
+        .major-action-btn:hover {
+            background: #c0392b !important;
+            box-shadow: 0 6px 10px rgba(231, 76, 60, 0.6);
+        }
+
+        /* --- Tarjeta de Reporte Individual --- */
+        .report-card {
+            background: #fff;
+            padding: 25px;
+            margin-bottom: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-left: 5px solid #3498db;
+        }
+        
+        .report-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+        }
+        .report-header h2 {
+            margin: 0;
+            font-size: 1.4em;
+            color: #2c3e50;
+        }
+
+        .report-meta {
+            font-size: 0.9em;
+            color: #7f8c8d;
+            margin-bottom: 15px;
+        }
+        
+        /* --- Badge de Estado --- */
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-weight: bold;
+            color: white;
+            font-size: 0.85em;
+        }
+        .status-open { background-color: #f39c12; }
+        .status-closed { background-color: #2ecc71; }
+        .status-pending { background-color: #3498db; }
+
+        /* --- Descripción del Problema --- */
+        .problem-description {
+            margin-top: 15px;
+            border-left: 3px solid #ccc;
+            padding-left: 15px;
+            font-size: 0.95em;
+            color: #555;
+            padding-top: 5px;
+        }
+        .description-text {
+            white-space: pre-wrap;
+        }
+
+        /* --- Hilo de Respuesta del Admin --- */
+        .thread-separator {
+            border: 0;
+            border-top: 1px dashed #ccc;
+            margin: 20px 0;
+        }
+        .admin-response-box {
+            padding: 15px;
+            background: #ecf0f1;
+            border-left: 4px solid #2ecc71;
+            border-radius: 4px;
+        }
+        .response-title {
+            margin-top: 0; 
+            color: #1a7d3f;
+            font-size: 1.1em;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+        }
+        .response-thread {
+            white-space: pre-wrap; 
+            font-size: 0.95em;
+            color: #333;
+        }
+        .pending-message {
+            color: #f39c12;
+            font-style: italic;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        .closed-final-message {
+            color: #2ecc71;
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-top: 15px;
+        }
+        
+        .image-link {
+            font-size: 0.9em;
+            color: #3498db;
+            text-decoration: underline;
+            display: inline-block;
+            margin-top: 5px;
+        }
+
+        /* --- Formulario de Respuesta Rápida --- */
+        .reply-form {
+            padding: 15px 0;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            margin-bottom: 10px;
+        }
+        .reply-btn {
+            background: #3498db; 
+            padding: 8px 15px;
+            font-size: 0.95em;
+            font-weight: bold;
+            text-decoration: none; /* Asegurado */
+            color: white; /* Asegurado */
+            border-radius: 5px; /* Asegurado */
+            border: none; /* Asegurado */
+            cursor: pointer; /* Asegurado */
+        }
+        
+        /* --- MEDIA QUERY (Móvil) --- */
+        @media (max-width: 600px) {
+            .reports-list-container {
+                width: 100%;
+                padding: 0 10px;
+            }
+            .report-card {
+                padding: 15px;
+            }
+            .report-header {
+                flex-direction: column;
+                align-items: flex-start;
+                padding-bottom: 5px;
+            }
+            .report-header h2 {
+                font-size: 1.3em;
+                margin-bottom: 8px;
+            }
+            .report-meta {
+                margin-top: 5px;
+            }
+            
+            .top-controls {
+                justify-content: space-between;
+            }
+            
+            .back-nav-btn, .new-report-btn {
+                width: 48%;
+                text-align: center;
+                box-sizing: border-box;
+            }
+        }
+    </style>
+{% endblock %}

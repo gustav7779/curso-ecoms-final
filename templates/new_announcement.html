@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}Publicar Nuevo Anuncio{% endblock %}
+
+{% block content %}
+    <div class="container new-announcement-container">
+        <div class="card form-card">
+            <h2 class="card-title">📢 Nuevo Anuncio</h2>
+            <p class="announcement-meta">Utiliza este formulario para publicar avisos importantes a todos los estudiantes.</p>
+
+            <form method="POST" class="announcement-form">
+                
+                <div class="form-group">
+                    <label for="title">Título del Anuncio:</label>
+                    <input type="text" id="title" name="title" placeholder="Ej: Fechas de inscripción al examen final" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="content">Contenido del Anuncio:</label>
+                    <textarea id="content" name="content" rows="8" placeholder="Escribe aquí el cuerpo del anuncio..." required></textarea>
+                </div>
+
+                <button type="submit" class="button submit-button publish-btn">Publicar Anuncio</button>
+            </form>
+        </div>
+
+        <a href="{{ url_for('admin_panel') }}" class="btn back-btn">⬅ Volver al Panel</a>
+    </div>
+
+    <style>
+        /* --- Contenedor y Tarjeta Base --- */
+        .new-announcement-container {
+            max-width: 700px;
+            margin: 30px auto;
+        }
+
+        .form-card {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-title {
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            color: #34495e;
+        }
+
+        .announcement-meta {
+            font-size: 0.95em;
+            color: #555;
+            margin-bottom: 20px;
+            border-bottom: 1px dashed #f0f0f0;
+            padding-bottom: 15px;
+        }
+
+        /* --- Estructura del Formulario (Responsive) --- */
+        .form-group { 
+            margin-bottom: 20px; /* Más espacio entre grupos */
+        }
+
+        .form-group label { 
+            display: block; 
+            margin-bottom: 8px; 
+            font-weight: bold; 
+            color: #333;
+        }
+        
+        .announcement-form input[type="text"], 
+        .announcement-form textarea {
+            width: 100%; /* CLAVE: Ocupa el 100% del contenedor */
+            padding: 12px; 
+            border: 1px solid #ccc; 
+            border-radius: 6px; 
+            box-sizing: border-box; /* Fundamental para que el padding funcione correctamente */
+            transition: border-color 0.3s;
+        }
+        
+        .announcement-form input[type="text"]:focus, 
+        .announcement-form textarea:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+
+        /* --- Botón de Publicar --- */
+        .publish-btn { 
+            display: block;
+            width: 100%;
+            padding: 12px; 
+            margin-top: 10px;
+            background: #2ecc71; /* Verde primario */
+            color: white;
+            border: none;
+            border-radius: 6px; 
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1.1em;
+            transition: background 0.3s;
+        }
+        .publish-btn:hover {
+            background: #27ae60;
+        }
+
+        /* --- Botón Volver --- */
+        .back-btn {
+            margin-top: 20px;
+            display: inline-block;
+            background: #7f8c8d; /* Color neutro para volver */
+        }
+
+        /* --- MEDIA QUERY (Ajustes finos para móvil) --- */
+        @media (max-width: 600px) {
+            .new-announcement-container {
+                width: 100%;
+                margin: 10px auto;
+            }
+            .form-card {
+                padding: 15px;
+            }
+        }
+    </style>
+{% endblock %}

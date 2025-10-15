@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block title %}Aviso de Privacidad{% endblock %}
+
+{% block content %}
+    <div class="container privacy-container">
+        <header class="privacy-header">
+            <h1 class="header-title">🔒 Aviso de Privacidad</h1>
+            <p>Casa de Cultura de San Mateo Xalpa, a través de la página web del Curso de Preparación para el Examen ECOMS, con domicilio en San Mateo Xalpa, Ciudad de México, es responsable del tratamiento y protección de los datos personales que nos proporcione, en cumplimiento con la Ley Federal de Protección de Datos Personales en Posesión de los Particulares.</p>
+        </header>
+
+        <section class="privacy-section">
+            <h2>1. Datos personales que se recaban</h2>
+            <p>Para la correcta prestación del servicio educativo y la verificación de los exámenes simuladores, se recabarán y almacenarán los siguientes datos personales:</p>
+            <ul>
+                <li>Nombre completo del alumno</li>
+                <li>Correo electrónico y/o número telefónico</li>
+                <li>Resultados y aciertos obtenidos en los exámenes simuladores</li>
+                <li>Grabación en video del rostro del alumno únicamente durante la realización del examen</li>
+            </ul>
+        </section>
+
+        <section class="privacy-section">
+            <h2>2. Finalidades del tratamiento de los datos</h2>
+            <p>Los datos personales mencionados serán utilizados para las siguientes finalidades:</p>
+            
+            <h3>Finalidades principales:</h3>
+            <ul>
+                <li>Verificar la identidad del alumno que presenta el examen.</li>
+                <li>Prevenir actos de trampa o suplantación durante los simuladores.</li>
+                <li>Registrar los resultados y avances del alumno para su preparación.</li>
+                <li>Garantizar la calidad y autenticidad del proceso de evaluación.</li>
+            </ul>
+            
+            <h3>Finalidades secundarias (opcionales):</h3>
+            <ul>
+                <li>Análisis estadístico del desempeño general del grupo (sin revelar identidades).</li>
+                <li>Mejora de los materiales y metodología del curso.</li>
+            </ul>
+        </section>
+
+        <section class="privacy-section">
+            <h2>3. Uso y protección de las grabaciones</h2>
+            <p>Las grabaciones en video se realizan exclusivamente mientras el alumno presenta el examen y se utilizan únicamente para fines de verificación y control interno.</p>
+            <p>Dichos videos son confidenciales, no se comparten con terceros y se almacenan de forma segura.</p>
+            <p>Al concluir la revisión correspondiente, las grabaciones pueden ser eliminadas en los plazos determinados por la administración del curso.</p>
+        </section>
+        
+        <section class="privacy-section">
+            <h2>4. Confidencialidad y resguardo de la información</h2>
+            <p>Toda la información recabada es tratada de manera estrictamente confidencial y se emplean medidas administrativas, técnicas y físicas necesarias para proteger los datos contra daño, pérdida, alteración, destrucción o uso no autorizado.</p>
+        </section>
+
+        <section class="privacy-section">
+            <h2>5. Derechos ARCO (Acceso, Rectificación, Cancelación y Oposición)</h2>
+            <p>Usted tiene derecho a acceder a sus datos personales, rectificarlos en caso de ser inexactos, cancelarlos cuando considere que no se requieren para las finalidades señaladas, oponerse al tratamiento de los mismos, o revocar el consentimiento otorgado.</p>
+            <p>Para ejercer estos derechos, puede enviar una solicitud al correo: <strong>[agrega aquí tu correo de contacto]</strong> con el asunto “Solicitud de ejercicio de derechos ARCO”.</p>
+        </section>
+
+        <section class="privacy-section">
+            <h2>6. Cambios en el aviso de privacidad</h2>
+            <p>Cualquier modificación a este aviso de privacidad se publicará en esta misma página web para su conocimiento.</p>
+        </section>
+        
+        <section class="privacy-section consent-section">
+            <h2>7. Consentimiento</h2>
+            <p class="consent-text">Al registrarse y utilizar esta plataforma, el alumno acepta y autoriza el tratamiento de sus datos personales conforme a lo establecido en el presente Aviso de Privacidad.</p>
+            <p class="last-update">📄 Última actualización: 13 de octubre de 2025</p>
+        </section>
+
+        <a href="{{ url_for('index') }}" class="btn back-btn">⬅ Volver al Inicio</a>
+
+    </div>
+
+    <style>
+        .privacy-container {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .privacy-header {
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .header-title {
+            color: #2c3e50;
+            font-size: 2.2em;
+            margin-bottom: 10px;
+        }
+        .privacy-section {
+            margin-bottom: 30px;
+        }
+        .privacy-section h2, .privacy-section h3 {
+            color: #3498db;
+            border-bottom: 1px dashed #eee;
+            padding-bottom: 5px;
+            margin-top: 20px;
+        }
+        .privacy-section ul {
+            list-style: disc;
+            padding-left: 30px;
+            margin-top: 10px;
+        }
+        .consent-section {
+            background: #e9f5ff;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #c8e0f5;
+        }
+        .consent-text {
+            font-weight: bold;
+            color: #1f6391;
+        }
+        .last-update {
+            font-size: 0.85em;
+            margin-top: 15px;
+            color: #7f8c8d;
+        }
+        .back-btn {
+            background: #7f8c8d;
+            margin-top: 20px;
+        }
+    </style>
+{% endblock %}

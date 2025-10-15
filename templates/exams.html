@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+
+{% block title %}Exámenes Disponibles{% endblock %}
+
+{% block content %}
+    <div class="header-page-title exam-header">
+        <h1>📚 Exámenes Disponibles</h1>
+        <p>Selecciona un examen para comenzar tu simulación de prueba.</p>
+    </div>
+    
+    <div class="container exam-list-container">
+        
+        <ul class="exam-cards-list">
+            {% for exam in exams %}
+            
+                {% set is_scheduled = exam.start_datetime and exam.start_datetime > current_time %}
+                {% set is_expired = exam.end_datetime and exam.end_datetime < current_time %}
+                {% set is_available = not is_scheduled and not is_expired %}
+
+                <li class="{{ 'unavailable-card' if not is_available }}">
+                    <div class="exam-info">
+                        <span class="exam-icon">📝</span>
+                        <div class="exam-text-and-status">
+                            <span class="exam-title-text">{{ exam.title }}</span>
+                            <span class="exam-questions-count">({{ exam.questions | length | default(0) }} Preguntas)</span>
+                            
+                            <span class="exam-status-indicator {{ 'status-available' if is_available else 'status-unavailable' }}">
+                                {% if is_scheduled %}
+                                    ⏰ Disponible: {{ exam.start_datetime | datetimeformat('dd/MM/yyyy HH:mm') }}
+                                {% elif is_expired %}
+                                    ❌ Expirado: {{ exam.end_datetime | datetimeformat('dd/MM/yyyy HH:mm') }}
+                                {% else %}
+                                    ✅ Disponible Ahora
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    {% if is_available %}
+                    <a href="{{ url_for('take_exam', exam_id=exam.id) }}" class="btn present-btn">
+                        Presentar Examen
+                    </a>
+                    {% else %}
+                    <span class="btn present-btn disabled-btn">
+                        {{ 'Programado' if is_scheduled else 'Expirado' }}
+                    </span>
+                    {% endif %}
+                </li>
+            {% else %}
+            <li class="no-exams-message">
+                <p>No hay exámenes disponibles en este momento.</p>
+            </li>
+            {% endfor %}
+        </ul>
+        
+        <a href="{{ url_for('dashboard') }}" class="btn back-btn">⬅ Volver al Dashboard</a>
+    </div>
+
+    <style>
+        /* --- ESTILOS ADICIONALES PARA PROGRAMACIÓN Y ESTADO --- */
+
+        .exam-cards-list li {
+            position: relative;
+            /* ... (estilos existentes) */
+        }
+
+        .exam-cards-list li:hover {
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+        }
+
+        .unavailable-card {
+            background: #f7f7f7; /* Fondo gris claro para inactivos */
+            opacity: 0.8;
+        }
+
+        .exam-text-and-status {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .exam-status-indicator {
+            font-size: 0.9em;
+            padding-top: 5px;
+            font-weight: 500;
+        }
+
+        .status-available {
+            color: #27ae60; /* Verde */
+        }
+
+        .status-unavailable {
+            color: #e67e22; /* Naranja/advertencia */
+        }
+        
+        /* --- Botón Presentar --- */
+        .present-btn {
+            background: #2ecc71; /* Verde vibrante */
+            padding: 10px 20px;
+            font-weight: bold;
+            text-align: center;
+        }
+        .present-btn:hover {
+            background: #27ae60;
+        }
+        
+        /* Estilo para botón deshabilitado (no es un enlace 'a') */
+        .disabled-btn {
+            background: #95a5a6; /* Gris para deshabilitado */
+            cursor: not-allowed;
+            pointer-events: none; /* Asegura que no se pueda hacer clic */
+        }
+        
+        /* --- Título de la Página --- */
+        .exam-header {
+            background: linear-gradient(90deg, #3498db, #2980b9);
+            color: white; 
+            padding: 25px;
+            text-align: center; 
+            border-radius: 0 0 10px 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .exam-header h1, .exam-header p {
+            margin: 0;
+        }
+
+        .exam-list-container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        /* --- Lista de Exámenes --- */
+        .exam-cards-list {
+            list-style: none;
+            padding: 0;
+            margin-bottom: 30px;
+        }
+        
+        .exam-info {
+            display: flex;
+            align-items: center;
+            flex-grow: 1;
+        }
+        
+        .exam-icon {
+            font-size: 1.8em;
+            margin-right: 15px;
+            color: #3498db;
+        }
+        
+        .exam-title-text {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .exam-questions-count {
+            margin-left: 10px;
+            font-size: 0.9em;
+            color: #7f8c8d;
+        }
+
+        
+        .no-exams-message {
+            background: #fff3cd !important;
+            color: #856404;
+            border-left: 5px solid #f1c40f;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .back-btn {
+            background: #7f8c8d;
+        }
+
+        /* --- MEDIA QUERY (Adaptabilidad para Móvil) --- */
+        @media (max-width: 600px) {
+            
+            .exam-list-container {
+                width: 100%;
+                padding: 0 10px;
+            }
+
+            .exam-header {
+                padding: 15px 10px;
+            }
+
+            .exam-cards-list li {
+                flex-direction: column; /* Apila el contenido y el botón */
+                align-items: flex-start;
+                padding: 15px;
+            }
+
+            .exam-info {
+                margin-bottom: 15px;
+                flex-wrap: wrap; /* Permite que el texto se envuelva */
+            }
+
+            .exam-icon {
+                font-size: 1.5em;
+                margin-right: 10px;
+            }
+            
+            /* Ajuste para que el texto y el contador ocupen bien el espacio */
+            .exam-text-and-status {
+                width: 100%;
+                margin-left: 0;
+            }
+            .exam-title-text, .exam-questions-count, .exam-status-indicator {
+                display: block;
+                width: 100%;
+                margin-left: 0;
+            }
+            
+            .present-btn, .disabled-btn {
+                width: 100%;
+                margin-top: 10px;
+            }
+        }
+    </style>
+{% endblock %}

@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% block title %}Nuevo Examen - Curso ECOMS{% endblock %}
+{% block content %}
+    <div class="container new-exam-container">
+        <div class="card form-card">
+            <h2 class="card-title">📝 Crear Nuevo Examen</h2>
+            <p class="exam-meta">Define un título y una descripción para el nuevo examen. Podrás añadir las preguntas después de crearlo.</p>
+
+            <form method="POST" class="exam-form">
+                <div class="form-group">
+                    <label for="title">Título del Examen:</label>
+                    <input type="text" id="title" name="title" placeholder="Ej: Simulación Final 2025" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="description">Descripción del Examen (Opcional):</label>
+                    <textarea id="description" name="description" rows="4" placeholder="Breve resumen del contenido o reglas del examen."></textarea>
+                </div>
+                
+                <!-- 🔑 NUEVOS CAMPOS DE PROGRAMACIÓN 🔑 -->
+                <div class="form-group">
+                    <label for="start_datetime">Fecha y Hora de **Inicio** (Opcional - UTC):</label>
+                    <p class="exam-meta" style="margin-top: -5px; font-size: 0.85em;">Si se deja vacío, estará disponible inmediatamente.</p>
+                    <input type="datetime-local" id="start_datetime" name="start_datetime" class="datetime-input">
+                </div>
+
+                <div class="form-group">
+                    <label for="end_datetime">Fecha y Hora de **Fin** (Opcional - UTC):</label>
+                    <p class="exam-meta" style="margin-top: -5px; font-size: 0.85em;">Después de esta hora, el examen ya no podrá ser tomado.</p>
+                    <input type="datetime-local" id="end_datetime" name="end_datetime" class="datetime-input">
+                </div>
+                
+                <button type="submit" class="button submit-button create-btn">Crear Examen</button>
+            </form>
+        </div>
+
+        <a href="{{ url_for('admin_panel') }}" class="btn back-btn">⬅ Volver al Panel Admin</a>
+    </div>
+
+    <style>
+        /* --- Contenedor y Tarjeta Base --- */
+        .new-exam-container {
+            max-width: 700px;
+            margin: 30px auto;
+        }
+
+        .form-card {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-title {
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            color: #34495e;
+        }
+        
+        .exam-meta {
+            font-size: 0.95em;
+            color: #555;
+            margin-bottom: 20px;
+            border-bottom: 1px dashed #f0f0f0;
+            padding-bottom: 15px;
+        }
+
+        /* --- Estructura del Formulario (Responsive) --- */
+        .exam-form {
+            padding-top: 10px;
+        }
+        
+        .form-group { 
+            margin-bottom: 20px;
+        }
+
+        .form-group label { 
+            display: block; 
+            margin-bottom: 8px; 
+            font-weight: bold; 
+            color: #333;
+        }
+        
+        .exam-form input[type="text"], 
+        .exam-form textarea,
+        .exam-form input[type="datetime-local"] { /* Añadido datetime-local */
+            width: 100%; 
+            padding: 12px; 
+            border: 1px solid #ccc; 
+            border-radius: 6px; 
+            box-sizing: border-box; 
+            transition: border-color 0.3s;
+        }
+        
+        .exam-form input[type="text"]:focus, 
+        .exam-form textarea:focus,
+        .exam-form input[type="datetime-local"]:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+
+        /* --- Botón de Crear --- */
+        .create-btn { 
+            display: block;
+            width: 100%;
+            padding: 12px; 
+            margin-top: 20px;
+            background: #3498db; 
+            color: white;
+            border: none;
+            border-radius: 6px; 
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1.1em;
+            transition: background 0.3s;
+        }
+        .create-btn:hover {
+            background: #2980b9;
+        }
+
+        /* --- Botón Volver --- */
+        .back-btn {
+            margin-top: 20px;
+            display: inline-block;
+            background: #7f8c8d; 
+        }
+
+        /* --- MEDIA QUERY (Ajustes finos para móvil) --- */
+        @media (max-width: 600px) {
+            .new-exam-container {
+                width: 100%;
+                margin: 10px auto;
+            }
+            .form-card {
+                padding: 15px;
+            }
+        }
+    </style>
+{% endblock %}

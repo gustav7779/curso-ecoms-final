@@ -1,0 +1,767 @@
+{% extends "base.html" %}
+
+{% block title %}Presentar Examen: {{ exam.title }}{% endblock %}
+
+{% block content %}
+    
+    <!-- 🔑 GRUPO DE CONTROLES SUPERIORES (AJUSTE UX) 🔑 -->
+    <div class="header-controls-group">
+        <a href="{{ url_for('new_report') }}" 
+           id="report-error-button" 
+           class="btn report-error-btn" 
+           target="_blank" 
+           title="Reportar un problema sin perder el examen">
+            🚨 Reportar Error
+        </a>
+
+        <div id="fixed-timer-container" class="fixed-timer-box">
+            <span>⏰ Tiempo Restante:</span>
+            <div id="countdown" class="countdown-display">03:00:00</div>
+        </div>
+    </div>
+    
+    <!-- 🔑 PANEL FLOTANTE DE CHAT DEL ALUMNO 🔑 -->
+    <div id="student-chat-panel" class="student-chat-panel">
+        <div class="chat-panel-header">
+            <strong>💬 Soporte en Vivo</strong>
+            <span class="close-chat" id="close-chat-button">×</span>
+        </div>
+        <div id="chat-messages" class="chat-messages">
+            <!-- Los mensajes del Admin y del Alumno irán aquí -->
+        </div>
+        <form id="student-chat-form" class="student-chat-form">
+            <input type="text" id="student-message-input" placeholder="Escribe tu consulta rápida..." required>
+            <button type="submit" class="chat-send-btn">Enviar</button>
+        </form>
+    </div>
+    <!-- ----------------------------------------------- -->
+
+
+    <!-- 🔑 PANTALLA DE SUPERPOSICIÓN (OVERLAY) 🔑 -->
+    <div id="welcome-overlay" class="overlay">
+        <div class="overlay-content">
+            <h1 class="welcome-title">✨ ¡Momento de Brillar, {{ current_user.username }}! ✨</h1>
+            <p class="exam-prep-text">Estás a punto de comenzar el examen **{{ exam.title }}**.</p>
+            <p class="exam-info-text">Tienes **3 horas (180 minutos)**. El tiempo comienza a correr apenas presiones el botón.</p>
+            <p class="exam-info-text">Concentración, calma y confianza. ¡Da tu mejor esfuerzo!</p>
+            
+            <button id="start-exam-button" class="button start-btn">
+                Comenzar Examen Ahora 🚀
+            </button>
+            <p class="warning-text">Recuerda: El envío es automático si el tiempo se agota.</p>
+        </div>
+    </div>
+    
+    <!-- --- CONTENIDO PRINCIPAL DEL EXAMEN --- -->
+    <div class="exam-header-info">
+        <h2 class="exam-title-main">📝 Examen: {{ exam.title }}</h2>
+        <p class="exam-description">{{ exam.description }}</p>
+    </div>
+
+    <div class="container exam-container">
+        
+        <!-- El formulario solo se usa para el envío FINAL. El guardado es por AJAX. -->
+        <form method="POST" class="exam-form" id="exam-form">
+            {% for question in exam.questions %}
+                <div class="question-card">
+                    
+                    <p class="question-meta">
+                        <strong>Materia:</strong> <span class="subject-tag">{{ question.subject or 'General' }}</span>
+                        | <strong>Pregunta {{ loop.index }}</strong>
+                    </p>
+                    
+                    <p class="question-text">{{ question.text }}</p>
+
+                    {% if question.image_filename %}
+                        <img src="{{ url_for('static', filename='images/' + question.image_filename) }}" 
+                             alt="Imagen de apoyo para la pregunta" 
+                             class="question-image">
+                    {% endif %}
+
+                    <div class="options-group">
+                        {% set options = [
+                            ('A', question.option_a), 
+                            ('B', question.option_b), 
+                            ('C', question.option_c), 
+                            ('D', question.option_d)
+                        ] %}
+                        
+                        <!-- CLAVE DE PRECARGA: Obtenemos la respuesta guardada del diccionario -->
+                        {% set q_name = 'q' + question.id | string %}
+                        {% set saved_response = saved_answers.get(question.id, '') %}
+
+                        {% for letter, option_text in options %}
+                            {% if option_text %}
+                                <label class="option-label">
+                                    <!-- CLAVE DE AUTO-SAVE: Añadimos onchange y precarga 'checked' -->
+                                    <input type="radio" 
+                                           name="{{ q_name }}" 
+                                           value="{{ letter }}" 
+                                           required
+                                           {% if saved_response == letter %}checked{% endif %}
+                                           onchange="autoSave('{{ question.id }}', this.value)"> 
+                                    <strong>{{ letter }})</strong> {{ option_text }}
+                                </label>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    
+                </div>
+            {% endfor %}
+
+            <button type="submit" class="button submit-btn">✅ Enviar Examen y Calificar</button>
+        </form>
+
+        <a href="{{ url_for('exams_list') }}" class="btn back-nav-btn">⬅ Volver a la Lista de Exámenes</a>
+
+    </div>
+    
+    <!-- 🔑 SCRIPTS DE SOCKETIO Y LÓGICA DE CHAT 🔑 -->
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <script>
+        // 🔑 VARIABLES DE TIEMPO (desde Flask) 🔑
+        // Usamos una variable global para manejar la lógica de la hora.
+        let START_TIME_UTC_SEC = parseInt("{{ start_time_utc | default('0') }}"); 
+        const DURATION_SEC = 3 * 60 * 60; // 3 horas en segundos
+        const examForm = document.getElementById('exam-form');
+        const countdownDisplay = document.getElementById('countdown');
+        const overlay = document.getElementById('welcome-overlay');
+        const startButton = document.getElementById('start-exam-button');
+        let timerInterval = null; 
+        
+        // ====================================================================
+        // 1. CHAT EN VIVO Y NOTIFICACIONES INSTANTÁNEAS
+        // ====================================================================
+        const currentUserId = parseInt("{{ current_user.id }}"); // <-- CORRECCIÓN: Asegura el parseo a entero
+        const socket = io.connect('http://' + document.domain + ':' + location.port);
+        
+        const chatPanel = document.getElementById('student-chat-panel');
+        const chatMessagesWindow = document.getElementById('chat-messages');
+        const closeChatButton = document.getElementById('close-chat-button');
+        const studentChatForm = document.getElementById('student-chat-form');
+        const studentMessageInput = document.getElementById('student-message-input');
+
+
+        // Evento 1.1: Conexión Exitosa - Unir a la sala privada
+        socket.on('connect', function() {
+            // Unir al usuario (alumno) a su propia sala (room) usando su ID.
+            socket.emit('join_room', { user_id: currentUserId, username: "{{ current_user.username }}" });
+            console.log(`SocketIO: Conectado. Unido al room: ${currentUserId}`);
+        });
+
+        // Evento 1.2: Mensaje Recibido del Admin (Muestra el panel)
+        socket.on('chat_notification', function(data) {
+            if (data.sender === 'Admin') {
+                addChatMessage(data.message, 'admin');
+                
+                // Muestra el panel de chat al recibir el primer mensaje
+                chatPanel.style.display = 'flex';
+            }
+        });
+        
+        // 🔑 Evento 1.3: Cierre Remoto del Chat por el Admin (CORRECCIÓN FINAL) 🔑
+        socket.on('close_chat_signal', function(data) {
+            
+            // 1. Añadimos el mensaje de sistema para CONFIRMAR que el evento llegó
+            addChatMessage(`**Soporte Finalizado:** ${data.msg}`, 'system');
+            console.log("CHAT: Señal de cierre remota recibida. Forzando ocultamiento."); 
+            
+            // 2. Cierre el panel de forma inmediata y forzada
+            chatPanel.style.display = 'none'; 
+
+            // 3. Desactiva la entrada y vacía el historial (Para que no reaparezca con mensajes antiguos)
+            studentMessageInput.disabled = true;
+            document.querySelector('.chat-send-btn').disabled = true;
+            chatMessagesWindow.innerHTML = '';
+        });
+
+
+        // 🔑 Evento 1.4: Envío de Mensajes del Alumno 🔑
+        studentChatForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const message = studentMessageInput.value.trim();
+
+            if (message && !studentMessageInput.disabled) {
+                // Envía el mensaje al servidor, usando su propio ID como target del Admin
+                socket.emit('send_message_to_admin', { 
+                    target_admin_id: currentUserId, 
+                    message: message
+                });
+
+                // Muestra el mensaje localmente
+                addChatMessage(message, 'student');
+                studentMessageInput.value = '';
+                studentMessageInput.focus();
+            }
+        });
+
+        // 1.5: Cerrar el panel de chat manualmente por el alumno
+        closeChatButton.addEventListener('click', function() {
+            chatPanel.style.display = 'none';
+        });
+
+        // 1.6: Función para añadir mensajes a la ventana del chat
+        function addChatMessage(msg, type) {
+            const timestamp = (new Date()).toLocaleTimeString();
+            const sender = type === 'admin' ? 'Admin' : 'Yo';
+            
+            const msgDiv = document.createElement('div');
+            msgDiv.classList.add('chat-message', type + '-chat-message');
+            
+            // Usamos innerHTML para permitir el formato en el mensaje
+            if (type === 'system') {
+                msgDiv.innerHTML = msg; 
+            } else {
+                msgDiv.innerHTML = `<strong>${sender} (${timestamp}):</strong> ${msg}`;
+            }
+            
+            chatMessagesWindow.appendChild(msgDiv);
+            
+            chatMessagesWindow.scrollTop = chatMessagesWindow.scrollHeight;
+        }
+
+        // 1.7: Función de Notificación Flotante (se mantiene solo para el dashboard/reportes)
+        function showFloatingNotification(message) {
+            const container = document.getElementById('flash-container');
+            if (!container) return; 
+
+            const notification = document.createElement('div');
+            notification.classList.add('flash-message', 'flash-info');
+            
+            notification.innerHTML = message;
+            
+            container.appendChild(notification);
+
+            // Desvanecer después de 10 segundos
+            setTimeout(function() {
+                notification.style.opacity = '0';
+                setTimeout(function() {
+                    notification.remove();
+                }, 500); 
+            }, 10000); 
+        }
+
+        // ====================================================================
+        // 2. LÓGICA DE AUTO-SAVE (EXISTENTE)
+        // ====================================================================
+        function autoSave(questionId, responseValue) {
+            if (START_TIME_UTC_SEC === 0) {
+                console.warn("No se puede guardar: El examen aún no ha comenzado.");
+                return;
+            }
+
+            fetch('{{ url_for("save_answer") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    question_id: questionId,
+                    response: responseValue
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Error HTTP: ${response.status}`);
+                }
+                console.log(`Auto-Save Q${questionId}: Respuesta guardada.`);
+            })
+            .catch(error => {
+                console.error('Error de Guardado Automático:', error);
+            });
+        }
+        
+        // ====================================================================
+        // 3. LÓGICA DE CRONÓMETRO Y CONTROL (EXISTENTE)
+        // ====================================================================
+        function formatTime(totalSeconds) {
+            if (totalSeconds < 0) totalSeconds = 0;
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+
+            const pad = num => String(num).padStart(2, '0');
+            return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+        }
+
+        function updateCountdown() {
+            const currentTimeSec = Math.floor(Date.now() / 1000);
+            
+            if (START_TIME_UTC_SEC === 0) {
+                // 🔑 CORRECCIÓN CRONÓMETRO: Muestra 3 horas si no ha iniciado 🔑
+                clearInterval(timerInterval);
+                countdownDisplay.textContent = formatTime(DURATION_SEC); // Muestra la duración completa
+                return;
+            }
+
+            const elapsedTimeSec = currentTimeSec - START_TIME_UTC_SEC;
+            let remainingTimeSec = DURATION_SEC - elapsedTimeSec;
+
+            if (remainingTimeSec <= 0) {
+                remainingTimeSec = 0;
+                countdownDisplay.textContent = "00:00:00";
+                
+                document.querySelector('.submit-btn').disabled = true;
+                
+                setTimeout(() => {
+                    alert("¡El tiempo ha terminado! El examen será enviado automáticamente.");
+                    examForm.submit(); 
+                }, 100);
+
+                clearInterval(timerInterval);
+                return; 
+            }
+
+            countdownDisplay.textContent = formatTime(remainingTimeSec);
+            
+            // Lógica de cambio de color
+            if (remainingTimeSec <= 600) { 
+                countdownDisplay.style.backgroundColor = '#e74c3c'; 
+                countdownDisplay.style.color = 'white';
+            } else if (remainingTimeSec <= 1800) { 
+                 countdownDisplay.style.backgroundColor = '#f1c40f'; 
+                 countdownDisplay.style.color = '#333';
+            } else {
+                 countdownDisplay.style.backgroundColor = ''; 
+                 countdownDisplay.style.color = 'white'; 
+            }
+        }
+        
+        function startExam() {
+            fetch(window.location.href, { 
+                method: 'POST',
+                body: new URLSearchParams({ action: 'start_timer_now' }), 
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+            }).then(() => {
+                // Al recibir la confirmación del servidor, iniciamos el contador
+                START_TIME_UTC_SEC = Math.floor(Date.now() / 1000); 
+                
+                overlay.style.opacity = 0;
+                setTimeout(() => {
+                    overlay.style.display = 'none';
+                    updateCountdown();
+                    timerInterval = setInterval(updateCountdown, 1000);
+                }, 500);
+            })
+            .catch(error => {
+                console.error("Error al iniciar el temporizador en el servidor:", error);
+                alert("Error al iniciar el examen. Por favor, recarga la página.");
+            });
+        }
+        
+        // LÓGICA DE INICIO Y VERIFICACIÓN AL CARGAR
+        if (START_TIME_UTC_SEC === 0) {
+            // Si el tiempo es 0, mostramos el overlay y el tiempo completo en el cronómetro
+            overlay.style.display = 'flex';
+            updateCountdown(); 
+            if (startButton) {
+                startButton.addEventListener('click', startExam);
+            }
+        } else {
+            // Si hay un tiempo guardado, ocultamos el overlay e iniciamos el cronómetro
+            const currentTimeSec = Math.floor(Date.now() / 1000);
+            const remainingTime = DURATION_SEC - (currentTimeSec - START_TIME_UTC_SEC);
+            
+            overlay.style.display = 'none';
+            if (remainingTime <= 0) {
+                updateCountdown(); 
+            } else {
+                updateCountdown(); 
+                timerInterval = setInterval(updateCountdown, 1000);
+            }
+        }
+    </script>
+    
+    <style>
+        /* --- POSICIONAMIENTO GLOBAL DE ELEMENTOS SUPERIORES --- */
+        
+        /* Contenedor que agrupa los elementos superiores (para control de separación) */
+        .header-controls-group {
+            position: fixed;
+            top: 50px; 
+            right: 20px;
+            z-index: 100;
+            display: flex; /* Usamos flex para ordenar */
+            flex-direction: row; /* Elementos en fila */
+            gap: 15px; /* Separación entre el botón y el cronómetro */
+        }
+        
+        /* --- BOTÓN DE REPORTE FLOTANTE (Ahora dentro de header-controls-group) --- */
+        .report-error-btn {
+            position: static; /* Ya no es fixed */
+            top: auto; 
+            right: auto; 
+            background: #e67e22; 
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            transition: background 0.3s;
+            font-size: 1em;
+            text-decoration: none; 
+            align-self: flex-start; /* Alinea al inicio del grupo (arriba) */
+        }
+
+        .report-error-btn:hover {
+            background: #d35400;
+        }
+        
+        /* --- CRONÓMETRO FIJO (Ahora dentro de header-controls-group) --- */
+        .fixed-timer-box {
+            position: static; /* Ya no es fixed */
+            top: auto; 
+            right: auto;
+            background: #3498db;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 1em;
+            font-weight: bold;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            align-self: flex-start; /* Alinea al inicio del grupo (arriba) */
+        }
+        .countdown-display {
+            font-size: 1.8em;
+            font-family: 'Courier New', Courier, monospace;
+            margin-top: 5px;
+            padding: 5px 0;
+            background: rgba(0, 0, 0, 0.15);
+            border-radius: 4px;
+            transition: background-color 0.5s, color 0.5s;
+        }
+        
+        /* --- CLAVES PARA EL OVERLAY --- */
+        @keyframes subtleScale {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6); 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            opacity: 1;
+            transition: opacity 0.5s ease-out;
+        }
+        .overlay-content {
+            background: linear-gradient(135deg, #f0f9ff, #ffffff);
+            color: #333;
+            padding: 50px 40px;
+            border-radius: 20px; 
+            text-align: center;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+            max-width: 550px;
+            border: 4px solid #3498db; 
+            animation: subtleScale 5s infinite; 
+        }
+        .welcome-title {
+            color: #3498db; 
+            font-size: 2.8em;
+            margin-bottom: 20px;
+            font-weight: 800;
+        }
+        .exam-prep-text, .exam-info-text {
+            font-size: 1.1em;
+            margin-bottom: 15px;
+            color: #555;
+        }
+        .warning-text {
+            color: #e74c3c;
+            font-weight: bold;
+            margin-top: 15px;
+            font-size: 0.9em;
+        }
+        .start-btn {
+            background: #2ecc71 !important; 
+            padding: 15px 40px;
+            font-size: 1.3em;
+            margin-top: 30px;
+            box-shadow: 0 4px 8px rgba(46, 204, 113, 0.4);
+            transition: background 0.2s, transform 0.2s;
+        }
+        .start-btn:hover {
+            background: #27ae60 !important;
+            transform: scale(1.05);
+        }
+
+        /* --- Contenedor Principal y Centrado --- */
+        .exam-container {
+            max-width: 800px;
+            margin: 0 auto 30px auto; 
+            padding: 0 10px;
+        }
+
+        /* --- Título de la Página (Fuera de la Tarjeta) --- */
+        .exam-header-info {
+            max-width: 800px;
+            margin: 20px auto;
+            text-align: center;
+            padding: 0 10px;
+        }
+
+        .exam-title-main { 
+            color: #2c3e50; 
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .exam-description {
+            color: #555;
+            font-style: italic;
+            margin-bottom: 30px;
+        }
+        
+        /* --- Tarjeta de Pregunta --- */
+        .question-card {
+            background: white;
+            padding: 25px;
+            margin-bottom: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+            border-left: 4px solid #3498db;
+        }
+        
+        .question-meta {
+            font-size: 0.95em;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px dashed #eee;
+            color: #555;
+        }
+        
+        .question-text {
+            font-size: 1.1em; 
+            font-weight: bold;
+            margin-top: 15px;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        /* --- Imagen de Apoyo --- */
+        .question-image {
+            max-width: 100%; 
+            height: auto; 
+            margin: 15px 0; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .subject-tag {
+            display: inline-block;
+            background: #e6f3ff;
+            color: #004aad;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+        
+        /* --- Opciones de Respuesta --- */
+        .options-group {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .option-label {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            cursor: pointer;
+            background-color: #fcfcfc;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+        
+        .option-label:hover {
+            background-color: #f0f0f0;
+            border-color: #c5c5c5;
+        }
+        
+        .option-label input[type="radio"] {
+            margin-right: 15px;
+            transform: scale(1.2); 
+        }
+        
+        /* Resaltar la opción seleccionada */
+        .option-label input[type="radio"]:checked + strong {
+            color: #2ecc71; /* Verde */
+        }
+        .option-label input[type="radio"]:checked {
+            accent-color: #2ecc71;
+        }
+
+        /* --- Botón de Envío --- */
+        .submit-btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            margin-top: 30px;
+            background: #2ecc71;
+            color: white;
+            font-size: 1.1em;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+        .submit-btn:hover {
+            background: #27ae60;
+        }
+        
+        /* --- Botón de Navegación --- */
+        .back-nav-btn {
+            display: inline-block;
+            margin-top: 30px;
+            background: #7f8c8d;
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-weight: bold;
+            color: white;
+            text-decoration: none;
+            transition: background 0.3s;
+        }
+        .back-nav-btn:hover {
+            background: #5c6a74;
+        }
+
+        /* 🔑 ESTILOS DEL PANEL DE CHAT DEL ALUMNO (CORRECCIÓN VISIBILIDAD) 🔑 */
+        .student-chat-panel {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 300px;
+            height: 350px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            z-index: 9000;
+            display: none; /* 🔑 CLAVE: Oculto por defecto para evitar persistencia 🔑 */
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid #ddd;
+            transition: opacity 0.5s ease-out; /* Transición para el cierre suave */
+        }
+
+        .chat-panel-header {
+            background: #3498db;
+            color: white;
+            padding: 10px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1.1em;
+        }
+        .close-chat {
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1.2em;
+            transition: color 0.2s;
+        }
+        .close-chat:hover {
+            color: #f8d7da;
+        }
+
+        .chat-messages {
+            flex-grow: 1;
+            padding: 10px;
+            overflow-y: auto;
+            background: #fcfcfc;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            font-size: 0.9em;
+        }
+        .chat-message {
+            padding: 8px 12px;
+            border-radius: 15px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+        .admin-chat-message {
+            align-self: flex-start;
+            background-color: #e6f3ff;
+            color: #34495e;
+        }
+        .student-chat-message {
+            align-self: flex-end;
+            background-color: #dcf8c6;
+            color: #333;
+        }
+        .student-chat-form {
+            display: flex;
+            padding: 10px;
+            border-top: 1px solid #eee;
+        }
+        #student-message-input {
+            flex-grow: 1;
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            margin-right: 5px;
+        }
+        .chat-send-btn {
+            background: #2ecc71;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 8px 15px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+        .chat-send-btn:hover {
+            background: #27ae60;
+        }
+        
+        /* --- MEDIA QUERY (Ajustes finos para móvil) --- */
+        @media (max-width: 600px) {
+            
+            .header-controls-group {
+                top: 5px;
+                right: 50%;
+                transform: translateX(50%);
+                width: 95%;
+                gap: 5px;
+                justify-content: space-between;
+            }
+
+            .report-error-btn, .fixed-timer-box {
+                flex-grow: 1;
+                font-size: 0.8em;
+                padding: 8px;
+                text-align: center;
+            }
+            
+            .fixed-timer-box {
+                min-width: 120px;
+                font-size: 0.9em;
+            }
+            .countdown-display {
+                font-size: 1.5em;
+            }
+
+            .exam-header-info {
+                margin-top: 60px; 
+            }
+
+            .student-chat-panel {
+                width: 95%;
+                height: 250px;
+                right: 2.5%;
+                bottom: 10px;
+            }
+        }
+    </style>
+{% endblock %}

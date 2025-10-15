@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}Reportar Problema{% endblock %}
+
+{% block content %}
+    <div class="container report-form-container"> 
+        <div class="card form-card">
+            <h2 class="card-title">🛠️ Reportar un Problema</h2>
+            <p class="form-meta">Por favor, describe el problema o falla que estás experimentando. Si es posible, adjunta una captura de pantalla.</p>
+
+            <form method="POST" enctype="multipart/form-data" class="report-form">
+                
+                <div class="form-group">
+                    <label for="title">Título/Asunto:</label>
+                    <input type="text" id="title" name="title" placeholder="Ej: No puedo ver las opciones de la Pregunta 5" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="description">Descripción del Problema:</label>
+                    <textarea id="description" name="description" rows="6" placeholder="Describe exactamente lo que hiciste y el error que apareció." required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="image_file">Adjuntar Imagen/Captura (Opcional):</label>
+                    <input type="file" id="image_file" name="image_file" accept="image/*">
+                </div>
+                
+                <button type="submit" class="button submit-button report-btn">Enviar Reporte</button>
+            </form>
+        </div>
+
+        <a href="{{ url_for('dashboard') }}" class="btn back-nav-btn">⬅ Volver al Dashboard</a>
+    </div>
+
+    <style>
+        /* --- Contenedor y Tarjeta Base --- */
+        .report-form-container {
+            max-width: 700px;
+            margin: 30px auto;
+        }
+
+        .form-card {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-title {
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            color: #e74c3c; /* Rojo de soporte */
+        }
+        
+        .form-meta {
+            font-size: 0.95em;
+            color: #555;
+            margin-bottom: 20px;
+            border-bottom: 1px dashed #f0f0f0;
+            padding-bottom: 15px;
+        }
+
+        /* --- Estructura del Formulario --- */
+        .form-group { 
+            margin-bottom: 20px; 
+        }
+
+        .form-group label { 
+            display: block; 
+            margin-bottom: 8px; 
+            font-weight: bold; 
+            color: #333;
+        }
+        
+        /* Botón de Enviar Reporte */
+        .report-btn { 
+            display: block;
+            width: 100%;
+            padding: 12px; 
+            margin-top: 10px;
+            background: #e74c3c; 
+            color: white;
+            border: none;
+            border-radius: 6px; 
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1.1em;
+            transition: background 0.3s;
+        }
+        .report-btn:hover {
+            background: #c0392b;
+        }
+
+        /* --- Estilos Mejorados para Volver al Panel (back-nav-btn) --- */
+        .back-nav-btn {
+            margin-top: 25px;
+            display: inline-block;
+            background: #7f8c8d; /* Gris de navegación */
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            transition: background 0.3s, transform 0.2s;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .back-nav-btn:hover {
+            background: #5c6a74; /* Gris oscuro al pasar el ratón */
+            transform: translateX(-3px); /* Pequeño desplazamiento para indicar navegación */
+        }
+
+
+        /* --- MEDIA QUERY (Ajustes finos para móvil) --- */
+        @media (max-width: 600px) {
+            .report-form-container {
+                width: 100%;
+                margin: 10px auto;
+            }
+            .form-card {
+                padding: 15px;
+            }
+        }
+    </style>
+{% endblock %}

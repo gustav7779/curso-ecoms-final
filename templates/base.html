@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <title>{% block title %}Curso ECOMS{% endblock %}</title>
+    <style>
+        /* --- TIPOGRAFÍA Y ESTILOS BASE (USANDO FUENTE MODERNA) --- */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        
+        body {
+            font-family: 'Inter', Arial, sans-serif; /* Fuente moderna */
+            background: #eef2f5; /* Fondo muy claro y suave */
+            margin: 0;
+            padding: 0;
+            color: #333;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden; /* Evitar desplazamiento horizontal */
+        }
+        
+        /* --- ENCABEZADO (CON ESTILO NEUMORFISMO SUAVE) --- */
+        header {
+            background: linear-gradient(145deg, #34495e, #2c3e50); /* Degradado oscuro */
+            color: white;
+            /* Se establece padding vertical, el horizontal se maneja en el wrapper */
+            padding: 18px 0; 
+            display: flex;
+            justify-content: center; /* Centra el wrapper horizontalmente */
+            align-items: center;
+            /* Sombra sutil y elegante */
+            box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.2), -2px -2px 5px rgba(255, 255, 255, 0.1); 
+            position: sticky; /* Se mantiene en la parte superior */
+            top: 0;
+            z-index: 100;
+        }
+        
+        /* 🔑 CONTENEDOR INTERNO PARA CENTRAR EL CONTENIDO DEL HEADER 🔑 */
+        .header-content-wrapper {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px; /* Mismo ancho que .container */
+            margin: 0 auto;
+            padding: 0 30px; /* Agregamos el padding horizontal aquí */
+            width: 100%;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 1.8em;
+            font-weight: 700;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        /* --- NAVEGACIÓN PRINCIPAL --- */
+        .main-nav a {
+            color: white;
+            text-decoration: none;
+            padding: 10px 18px;
+            border-radius: 8px; /* Bordes más redondeados */
+            margin-left: 10px;
+            transition: background 0.3s, transform 0.2s, box-shadow 0.3s;
+            font-size: 1em;
+            font-weight: 600;
+            /* Botón con estilo suave */
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .main-nav a:hover {
+            background: #3498db;
+            transform: translateY(-2px); /* Efecto de "levantamiento" */
+            box-shadow: 0 4px 10px rgba(52, 152, 219, 0.5);
+        }
+        
+        /* Estilos específicos para botones de Panel y Logout */
+        .main-nav a[href*="admin_panel"] {
+            background: #2980b9 !important;
+            border: 1px solid #3498db;
+        }
+        .main-nav a[href*="logout"] {
+            background: #c0392b !important;
+            border: 1px solid #e74c3c;
+        }
+
+        .nav-role {
+            font-weight: bold;
+            color: #f1c40f; /* Color de acento (Amarillo) */
+            margin-right: 20px;
+            padding: 5px 10px;
+            border-radius: 5px;
+            background: rgba(0, 0, 0, 0.1);
+        }
+        
+        /* --- CONTENIDO PRINCIPAL --- */
+        main {
+            padding: 20px 20px 40px 20px; 
+            flex: 1; 
+        }
+        
+        /* --- CONTENEDOR BASE PARA VISTAS HIJAS (Limpio y Elevado) --- */
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            /* Sombra sutil para darle profundidad */
+            box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.05), -5px -5px 15px #ffffff;
+            margin: 20px auto; 
+            max-width: 1200px; /* Ancho máximo para legibilidad */
+        }
+
+        /* --- PIE DE PÁGINA --- */
+        footer {
+            text-align: center;
+            padding: 15px;
+            background: #2c3e50; 
+            color: #ecf0f1;
+            width: 100%;
+            font-size: 0.9em;
+            border-top: 3px solid #3498db;
+        }
+        
+        /* ======================================================= */
+        /* 🔑 MENSAJES FLASH (POSICIÓN FLOTANTE FORZADA Y DISEÑO) 🔑 */
+        /* ======================================================= */
+        #flash-container {
+            /* 🔑 CLAVE: Forzar la posición flotante sobre todos los elementos 🔑 */
+            position: fixed !important; 
+            bottom: 20px !important; 
+            right: 20px !important; 
+            z-index: 10000 !important; /* Máxima visibilidad */
+            width: 350px; 
+            
+            /* Estilos de apilamiento: los nuevos aparecen abajo */
+            display: flex; 
+            flex-direction: column-reverse;
+            align-items: flex-end;
+            gap: 10px;
+        }
+
+        .flash-message {
+            /* Diseño base de la notificación - Limpio y con barra lateral */
+            padding: 15px 20px; 
+            border-radius: 8px; 
+            text-align: left;
+            font-weight: 600;
+            line-height: 1.4;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            opacity: 1;
+            transition: opacity 0.5s ease-out;
+            width: 100%;
+            box-sizing: border-box; /* Crucial para que el padding no afecte el ancho fijo */
+        }
+        
+        /* Estilos específicos para las categorías */
+        .flash-success {
+            background: #d4edda; 
+            color: #155724; 
+            border-left: 5px solid #2ecc71; /* Verde */
+        }
+        .flash-danger {
+            background: #f8d7da; 
+            color: #721c24;
+            border-left: 5px solid #e74c3c; /* Rojo */
+        }
+        .flash-warning {
+            background: #fff3cd;
+            color: #856404;
+            border-left: 5px solid #f1c40f; /* Amarillo */
+        }
+        /* ESTILO DE NOTIFICACIÓN (INFO) */
+        .flash-info {
+            background: #e6f3ff;
+            color: #1f6391;
+            border-left: 5px solid #3498db; /* Azul */
+        }
+        /* ======================================================= */
+        
+        /* --- ESTILOS DE BOTONES Y FORMULARIOS --- */
+        .btn {
+            display: inline-block;
+            padding: 12px 20px; /* Más grandes */
+            background: #3498db;
+            color: white;
+            border-radius: 8px; /* Más redondeados */
+            text-decoration: none;
+            transition: 0.3s, transform 0.2s;
+            cursor: pointer;
+            border: none;
+            font-weight: 600;
+        }
+        .btn:hover {
+            background: #2980b9;
+            transform: translateY(-1px);
+        }
+        
+        /* Controles de Formulario */
+        form input:not([type="submit"]), 
+        form textarea { 
+            margin: 10px 0;
+            padding: 12px; 
+            width: 80%; 
+            box-sizing: border-box; 
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        form input:focus, 
+        form textarea:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 5px rgba(52, 152, 219, 0.5);
+            outline: none;
+        }
+        
+        /* CORREGIDO: Selector de botón de envío */
+        .submit-btn { 
+            margin: 10px 0;
+            padding: 12px; 
+            width: 80%; 
+            box-sizing: border-box; 
+            border-radius: 8px;
+        }
+        
+        form button {
+            background: #2ecc71;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        form button:hover {
+            background: #27ae60;
+        }
+        
+        /* Listas (usadas en listados de preguntas/respuestas) */
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+        ul li {
+            background: white;
+            margin: 10px 0;
+            padding: 18px; 
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap; 
+            border-left: 4px solid #3498db; /* Barra de acento */
+        }
+
+        /* --- MEDIA QUERIES (ADAPTABILIDAD) --- */
+        @media (max-width: 768px) {
+            
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 15px 15px;
+            }
+            .header-content-wrapper {
+                padding: 0 15px;
+            }
+            .main-nav {
+                margin-top: 10px;
+                display: flex;
+                flex-direction: column;
+                width: 100%;
+            }
+            .main-nav a {
+                margin-left: 0;
+                margin-bottom: 5px;
+                text-align: left;
+                width: 100%;
+                box-sizing: border-box;
+            }
+            
+            /* Ajuste de Formularios para Móviles */
+            form input:not([type="submit"]), 
+            form textarea, 
+            form button.submit-btn {
+                width: 100%; 
+            }
+
+            /* Ajuste de Lista LI en Móviles */
+            ul li {
+                flex-direction: column; 
+                align-items: flex-start;
+                gap: 10px;
+            }
+            
+            /* Ajuste de Contenedor Flash en Móviles */
+            #flash-container {
+                width: 90%; 
+                right: 5%; 
+                left: 5%;
+                bottom: 10px;
+            }
+
+            main {
+                padding: 10px;
+            }
+            
+            .container {
+                padding: 20px 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    
+    <header>
+        <!-- 🔑 NUEVO WRAPPER PARA CENTRAR CONTENIDO 🔑 -->
+        <div class="header-content-wrapper">
+            <h1>Curso ECOMS</h1>
+            {% if current_user.is_authenticated %}
+            <nav class="main-nav">
+                <span class="nav-role">Rol: {{ current_user.role | capitalize }}</span>
+                
+                {% if current_user.role == 'student' %}
+                <a href="{{ url_for('dashboard') }}">Inicio</a>
+                <a href="{{ url_for('exams_list') }}">Exámenes</a>
+                <a href="{{ url_for('view_announcements') }}">Anuncios</a>
+                <a href="{{ url_for('student_reports') }}">Mis Reportes</a>
+                
+                {% elif current_user.role in ['admin', 'ayudante'] %}
+                <a href="{{ url_for('admin_panel') }}">Panel</a>
+                <a href="{{ url_for('admin_reports') }}">Reportes</a>
+                
+                {% endif %}
+                
+                <a href="{{ url_for('logout') }}">Cerrar Sesión</a>
+            </nav>
+            {% endif %}
+        </div>
+        <!-- Fin de header-content-wrapper -->
+    </header>
+
+    <div id="flash-container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="flash-message flash-{{ category }}">
+                {{ message }}
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+    </div>
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer>
+        &copy; 2025 Curso ECOMS de la CCSMX. Todos los derechos reservados.
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            let flashMessages = document.querySelectorAll('#flash-container .flash-message');
+            
+            flashMessages.forEach(function(message) {
+                // 🔑 CLAVE: DESAPARECER DESPUÉS DE 10 SEGUNDOS 🔑
+                setTimeout(function() {
+                    message.style.opacity = '0'; // Inicia la transición de desvanecimiento
+                    setTimeout(function() {
+                        message.remove(); // Quita el elemento del DOM completamente
+                    }, 500); // Espera 500ms para que la transición CSS se vea suave
+                }, 10000); // 10000 milisegundos = 10 segundos
+            });
+        });
+    </script>
+</body>
+</html>

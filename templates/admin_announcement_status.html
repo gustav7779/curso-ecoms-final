@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+
+{% block title %}Trazabilidad de Lectura{% endblock %}
+
+{% block content %}
+    <div class="header-status-title">
+        <h1>👁️ Trazabilidad de Lectura de Anuncios</h1>
+        <p>Reporte detallado sobre qué alumnos han visto cada anuncio.</p>
+    </div>
+
+    <div class="container status-container">
+        <a href="{{ url_for('admin_panel') }}" class="btn back-btn">⬅ Volver al Panel</a>
+
+        {% if announcements %}
+            {% for ann in announcements %}
+                <div class="announcement-status-card">
+                    <h3>📢 {{ ann.title }} 
+                        <span class="publication-date">
+                            (Publicado el {{ ann.date_published | datetimeformat('dd/MM/yyyy HH:mm') }})
+                        </span>
+                    </h3>
+                    
+                    <!-- Contenedor Responsivo para la Tabla -->
+                    <div class="table-responsive">
+                        <table class="students-table" border="1" cellpadding="10" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Alumno</th>
+                                    <th>Estado de Lectura</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% set read_user_ids = read_map.get(ann.id, []) %}
+                                
+                                {% for student in all_students %}
+                                <tr>
+                                    <td>{{ student.username }}</td>
+                                    <td>
+                                        {% if student.id in read_user_ids %}
+                                            <span class="status-read">✅ Leído</span>
+                                        {% else %}
+                                            <span class="status-unread">❌ No Leído</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p class="no-items-message">No hay anuncios para rastrear.</p>
+        {% endif %}
+    </div>
+
+    <style>
+        /* --- Contenedor Principal --- */
+        .status-container {
+            max-width: 1200px;
+            margin: 20px auto;
+        }
+
+        /* --- Título de la Página (Header Falso) --- */
+        .header-status-title {
+            background: #16a085; /* Verde azulado para la trazabilidad */
+            color: white; 
+            padding: 25px;
+            text-align: center; 
+            border-radius: 0 0 10px 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .header-status-title h1, .header-status-title p {
+            margin: 0;
+        }
+
+        .publication-date {
+            font-weight: normal; 
+            font-size: 0.8em; 
+            color: #ecf0f1; /* Color claro para la fecha */
+        }
+        
+        .back-btn {
+            margin-bottom: 20px;
+        }
+
+        /* --- Tarjetas de Anuncio --- */
+        .announcement-status-card {
+            background: white;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .announcement-status-card h3 {
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            color: #2c3e50;
+        }
+
+        /* --- Estilos de Tabla --- */
+        .table-responsive {
+            overflow-x: auto; /* Permite desplazamiento horizontal en pantallas pequeñas */
+            width: 100%;
+        }
+
+        .students-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            min-width: 450px; /* Asegura que la tabla no se colapse demasiado en móvil */
+        }
+
+        .students-table th {
+            background-color: #f0f0f0;
+            text-align: left;
+            padding: 12px;
+            border: 1px solid #ddd;
+        }
+        .students-table td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+            border-right: 1px solid #eee;
+            border-left: 1px solid #eee;
+        }
+        .students-table tr:nth-child(even) {
+            background-color: #fcfcfc;
+        }
+
+        /* --- Estados de Lectura --- */
+        .status-read {
+            color: #1abc9c;
+            font-weight: bold;
+        }
+        .status-unread {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        
+        .no-items-message {
+            padding: 15px;
+            background: #fdf3c7;
+            border-left: 5px solid #f1c40f;
+            border-radius: 5px;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+
+        /* --- MEDIA QUERIES (Ajustes para Móvil) --- */
+        @media (max-width: 600px) {
+            
+            .status-container {
+                width: 100%;
+                margin: 0 auto;
+                padding: 0 10px;
+            }
+            
+            .announcement-status-card {
+                padding: 15px;
+            }
+
+            .header-status-title {
+                padding: 15px;
+                margin-bottom: 20px;
+            }
+            
+            .header-status-title h1 {
+                font-size: 1.5em;
+            }
+            
+            /* En pantallas pequeñas, el desplazamiento lateral de la tabla es clave */
+            .table-responsive {
+                -webkit-overflow-scrolling: touch;
+            }
+
+            /* Aseguramos que la columna de estado no se colapse */
+            .students-table th:last-child,
+            .students-table td:last-child {
+                width: 150px; 
+            }
+        }
+    </style>
+{% endblock %}
